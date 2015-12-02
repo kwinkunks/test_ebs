@@ -7,6 +7,7 @@ Testing EBS and Webapp2 together.
 """
 import os
 import mimetypes
+import logging
 
 import webapp2
 import jinja2
@@ -60,14 +61,26 @@ class HelloWebapp2(Handler):
     def get(self):
         self.response.write('Hello, webapp2!')
 
+def handle_404(request, response, exception):
+    logging.exception(exception)
+    response.write('Oops! I could swear this page was here!')
+    response.set_status(404)
+
 #############################
 # Paths
 # n.b. app must be called 'application' for EB to run it
+scheme = 'https'
+# Thinking we might want to use webapp2 under Apache to achieve, for ex.,
+# URL rewrites (to force to https for example)
+# http://stackoverflow.com/questions/11471392/webapp2-under-apache-without-google-app-engine
+
 application = webapp2.WSGIApplication([
-                           (r'/', HelloWebapp2),
-                           (r'/test', TestHandler),
-                           (r'/static/(.+)', StaticHandler),
+                           (r'/', HelloWebapp2, schemes=[scheme]),
+                           (r'/test', TestHandler, schemes=[scheme]),
+                           (r'/static/(.+)', StaticHandler, schemes=[scheme]),
                           ], debug=True)
+
+application.error_handlers[404] = handle_404
 
 #############################
 # For running locally
